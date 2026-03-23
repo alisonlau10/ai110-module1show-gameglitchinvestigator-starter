@@ -1,6 +1,11 @@
 import random
 import streamlit as st
 
+# Outcome constants
+OUTCOME_WIN = "Win"
+OUTCOME_TOO_HIGH = "Too High"
+OUTCOME_TOO_LOW = "Too Low"
+
 def get_range_for_difficulty(difficulty: str):
     if difficulty == "Easy":
         return 1, 20
@@ -31,35 +36,35 @@ def parse_guess(raw: str):
 
 def check_guess(guess, secret):
     if guess == secret:
-        return "Win", "🎉 Correct!"
+        return OUTCOME_WIN, "🎉 Correct!"
 
     try:
         if guess > secret:
-            return "Too High", "📈 Go HIGHER!"
+            return OUTCOME_TOO_HIGH, "📈 Go HIGHER!"
         else:
-            return "Too Low", "📉 Go LOWER!"
+            return OUTCOME_TOO_LOW, "📉 Go LOWER!"
     except TypeError:
         g = str(guess)
         if g == secret:
-            return "Win", "🎉 Correct!"
+            return OUTCOME_WIN, "🎉 Correct!"
         if g > secret:
-            return "Too High", "📈 Go HIGHER!"
-        return "Too Low", "📉 Go LOWER!"
+            return OUTCOME_TOO_HIGH, "📈 Go HIGHER!"
+        return OUTCOME_TOO_LOW, "📉 Go LOWER!"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
-    if outcome == "Win":
+    if outcome == OUTCOME_WIN:
         points = 100 - 10 * (attempt_number + 1)
         if points < 10:
             points = 10
         return current_score + points
 
-    if outcome == "Too High":
+    if outcome == OUTCOME_TOO_HIGH:
         if attempt_number % 2 == 0:
             return current_score + 5
         return current_score - 5
 
-    if outcome == "Too Low":
+    if outcome == OUTCOME_TOO_LOW:
         return current_score - 5
 
     return current_score
@@ -107,7 +112,7 @@ if "history" not in st.session_state:
 st.subheader("Make a guess")
 
 st.info(
-    f"Guess a number between 1 and 100. "
+    f"Guess a number between {low} and {high}. "
     f"Attempts left: {attempt_limit - st.session_state.attempts}"
 )
 
@@ -152,6 +157,9 @@ if submit:
     if not ok:
         st.session_state.history.append(raw_guess)
         st.error(err)
+    elif guess_int < low or guess_int > high:
+        st.session_state.history.append(guess_int)
+        st.error(f"Please enter a number between {low} and {high}.")
     else:
         st.session_state.history.append(guess_int)
 
@@ -171,7 +179,7 @@ if submit:
             attempt_number=st.session_state.attempts,
         )
 
-        if outcome == "Win":
+        if outcome == OUTCOME_WIN:
             st.balloons()
             st.session_state.status = "won"
             st.success(
